@@ -1,33 +1,61 @@
-import { useEffect } from "react";
+import { GetStaticProps } from "next";
+import { format, parseISO } from "date-fns";
+import ptBR from "date-fns/locale/pt-BR";
+import api from "../services/api";
+import { convertDurationToTimeString } from "../utils/convertDurationToTimeString";
 
-/**
- * SPA: Single Page Aplication | Dados retornados apenas quando o usuário acessa a página
- * referente ao dado
- *
- * SSR: Server-Side Rendering | Dados são renderizados pelo node interno do next e é entrege no momento
- * que entramos na home, e os dados permanecem mesmo sem o JS habilitado
- *
- * SSG: Static Site Generation | Dados são pegos pelo o backend do next e com esses dados ele criar
- * uma página estatica (um HTML) com esse dados que será fornecido para todos os usuários que acessarem o mesmo,
- * porem você deve estar pensando, então a pagina não terá uma atualização dinamica? e quando os dados mudarem?
- * Aí que vem a carta chave, você pode passar uma propriedade chamada *revalidade* e passar um tempo especifico
- * para o momento que o node do next irá atualizar esse html com os novos dados, assim criando um outro HTML com
- * os novos dados. QUE BAGUI BIZARROOO
- * @returns
- */
+type Episode = {
+  id: string;
+  title: string;
+  thumbnail: string;
+  members: string;
+  duration: number;
+  description: string;
+  publishedAt: string;
+  durationAsString: string;
+  url: string;
+};
 
-export default function Home(props) {
+type HomeProps = {
+  episodes: Episode[];
+};
+
+export default function Home(props: HomeProps) {
   return <div></div>;
 }
 
-export async function getStaticProps() {
-  const response = await fetch("http://localhost:3333/episodes");
-  const data = await response.json();
+export const getStaticProps: GetStaticProps = async () => {
+  const { data } = await api.get("/episodes", {
+    params: {
+      _limit: 12,
+      _sort: "published_at",
+      _order: "desc",
+    },
+  });
+
+  const episodes = data.map((episode) => {
+    // Sempre formatar os dados antes de renderizar o mesmo no component
+    return {
+      id: episode.id,
+      title: episode.title,
+      thumbnail: episode.thumbnail,
+      members: episode.members,
+      publishedAt: format(parseISO(episode.published_at), "d MMM yy", {
+        locale: ptBR,
+      }),
+      duration: Number(episode.file.duration),
+      durationAsString: convertDurationToTimeString(
+        Number(episode.file.duration)
+      ),
+      description: episode.description,
+      url: episode.file.url,
+    };
+  });
 
   return {
     props: {
-      episodes: data,
+      episodes,
     },
     revalidate: 60 * 60 * 8,
   };
-}
+};
