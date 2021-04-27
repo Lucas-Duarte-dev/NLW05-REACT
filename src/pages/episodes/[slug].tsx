@@ -6,10 +6,10 @@ import { GetStaticPaths, GetStaticProps } from "next";
 import Link from "next/link";
 import api from "../../services/api";
 import { convertDurationToTimeString } from "../../utils/convertDurationToTimeString";
-import { useRouter } from "next/router";
 
 import styles from "./episode.module.scss";
 import Image from "next/image";
+import { usePlayer } from "../../contexts/PlayerContext";
 
 type Episode = {
   id: string;
@@ -28,6 +28,8 @@ type EpisodeProps = {
 };
 
 const Episodes: React.FC<EpisodeProps> = ({ episode }) => {
+  const { play } = usePlayer();
+
   return (
     <div className={styles.episode}>
       <div className={styles.thumbnailContainer}>
@@ -42,7 +44,7 @@ const Episodes: React.FC<EpisodeProps> = ({ episode }) => {
           src={episode.thumbnail}
           objectFit="cover"
         />
-        <button type="button">
+        <button type="button" onClick={() => play(episode)}>
           <img src="/play.svg" alt="Tocar Episídio" />
         </button>
       </div>
